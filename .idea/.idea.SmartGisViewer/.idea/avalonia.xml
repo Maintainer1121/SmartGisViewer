@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AvaloniaProject">
+    <option name="projectPerEditor">
+      <map>
+        <entry key="SmartGisViewer/Client/Views/MainWindow.axaml" value="SmartGisViewer/SmartGisViewer.csproj" />
+        <entry key="SmartGisViewer/Views/MainWindow.axaml" value="SmartGisViewer/SmartGisViewer.csproj" />
+      </map>
+    </option>
+  </component>
+</project>
