@@ -24,6 +24,7 @@ namespace SmartGisViewer.Core.Gis.Layers
         /// </summary>
         void Render(ViewportState viewport, 
             DrawingContext context,
-            Rect viewBounds);
+            Rect viewBounds,
+            Point viewCenterScreen);
     }
 }

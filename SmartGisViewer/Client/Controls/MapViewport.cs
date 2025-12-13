@@ -106,8 +106,10 @@ namespace SmartGisViewer.Client.Controls
 
             var mousePosition = e.GetPosition(this);
             var factor = e.Delta.Y > 0 ? ZoomFactor : 1.0 / ZoomFactor;
+            
+            var viewCenter = new Point(Bounds.Width / 2, Bounds.Height / 2); //获取视口中心
 
-            _viewport.ZoomAt(mousePosition, factor);
+            _viewport.ZoomAt(mousePosition, viewCenter, factor);
             InvalidateVisual();
         }
 
@@ -125,6 +127,8 @@ namespace SmartGisViewer.Client.Controls
             // 2️⃣ 清空背景（避免残影）
             context.FillRectangle(Brushes.Black, bounds);
 
+            var viewCenter = new Point(bounds.Width / 2, bounds.Height / 2); //获取视口中心点
+            
             // 3️⃣ 依次调度图层绘制
             foreach (var layer in _layers)
             {
@@ -134,7 +138,8 @@ namespace SmartGisViewer.Client.Controls
                 layer.Render(
                     _viewport,   // 视口状态（世界↔屏幕）
                     context,     // Avalonia 绘图上下文
-                    bounds       // 明确告知绘制区域
+                    bounds,    // 明确告知绘制区域
+                    viewCenter
                 );
             }
 
@@ -149,14 +154,15 @@ namespace SmartGisViewer.Client.Controls
         private void DrawDebugInfo(DrawingContext context, Rect bounds)
         {
             var text = new FormattedText(
-                $"Scale = {_viewport.Scale:F2}\n" +
-                $"Offset = ({_viewport.Offset.X:F1}, {_viewport.Offset.Y:F1})",
+                $"Zoom = {_viewport.Zoom:F2}\n" +
+                $"TileZoom = {_viewport.TileZoom}\n" +
+                $"CenterWorld = ({_viewport.CenterWorld.X:F3}, {_viewport.CenterWorld.Y:F3})",
 
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 Typeface.Default,
                 12,
-                Brushes.White
+                Brushes.Red
             );
 
             context.DrawText(
@@ -164,6 +170,7 @@ namespace SmartGisViewer.Client.Controls
                 new Point(bounds.Left + 10, bounds.Top + 10)
             );
         }
+
 
 
     }
