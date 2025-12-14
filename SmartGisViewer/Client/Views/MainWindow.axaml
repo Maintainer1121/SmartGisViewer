@@ -2,10 +2,168 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:SmartGisViewer.Client.Controls"
         x:Class="SmartGisViewer.Client.Views.MainWindow"
-        Width="1000" Height="700"
+        Width="1600" Height="800"
         Title="SmartGisViewer">
-
-    <Grid>
-        <controls:MapViewport x:Name="Map"/>
-    </Grid>
+        
+        <DockPanel>
+                
+                <!--======菜单栏======-->
+                <Menu DockPanel.Dock="Top">
+                        <MenuItem Header="文件"/>
+                        <MenuItem Header="编辑"/>
+                        <MenuItem Header="视图"/>
+                        <MenuItem Header="工具"/>
+                </Menu>
+                
+                <!--======工具栏======-->
+                <Border DockPanel.Dock="Top"
+                        Background="#2B2B2B"
+                        Height="40"
+                        Padding="4">
+                        
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Spacing="6">
+                                
+                                <Button Content="放大"/>
+                                <Button Content="缩小"/>
+                                <Button Content="重置"/>
+                                
+                        </StackPanel>
+                        
+                </Border>
+                <!--======视口区域======-->
+                <Grid>
+                        
+                        <Grid.ColumnDefinitions>
+                                <!-- 左侧工具面板 -->
+                                <ColumnDefinition Width="260"/>
+                                <!-- 左侧拖拽条 -->
+                                <ColumnDefinition Width="5"/>
+                                <!-- 主视口 -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- 右侧拖拽条 -->
+                                <ColumnDefinition Width="5"/>
+                                <!-- 右侧属性 -->
+                                <ColumnDefinition Width="300"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- 左侧工具面板 -->
+                        <Border Grid.Column="0"
+                                Background="#222"
+                                Padding = "10">
+                                
+                                <TextBlock Text="工具面板"
+                                           Foreground="White"/>
+                                
+                        </Border>
+                        
+                        <!-- 左侧拖拽条 -->
+                        <GridSplitter Grid.Column="1"
+                                      Width="5"
+                                      Background="#444"/>
+                        
+                        <!-- 主视口 -->
+                        <Grid Grid.Column="2">
+                                
+                                <!-- 图层绘制区域 -->
+                                <controls:MapViewport x:Name="Map"/>
+                                
+                                <!-- 右下角视图控制按钮 -->
+                                <Border Background="#FF3C3C3C"
+                                        Opacity="0.8"
+                                        CornerRadius="6"
+                                        Padding="6"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Margin="12">
+                                        
+                                        <Grid RowSpacing="6" ColumnSpacing="6">
+                                                
+                                                <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                
+                                                <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <Button Grid.Row="0" Grid.Column="0"
+                                                        Content="+"
+                                                        Foreground="Gray"
+                                                        Background="GhostWhite"
+                                                        Width="36"
+                                                        Height="36"
+                                                        FontSize="18"
+                                                        FontWeight="Bold"
+                                                        HorizontalContentAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        Click="ZoomIn_Click"/>
+                                        
+                                                <Button Grid.Row="1" Grid.Column="0" 
+                                                        Content="-"
+                                                        Foreground="Gray"
+                                                        Background="GhostWhite"
+                                                        Width="36"
+                                                        Height="36"
+                                                        FontSize="18"
+                                                        FontWeight="Bold"
+                                                        HorizontalContentAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        Click="ZoomOut_Click"/>
+                                                
+                                                <Button Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                                        Foreground="Gray"
+                                                        Background="GhostWhite"
+                                                        Width="31"
+                                                        Height="78"
+                                                        FontSize="18"
+                                                        FontWeight="Bold"
+                                                        HorizontalContentAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        Click="ResetView_Click">
+                                                        
+                                                        <TextBlock Text="重置视角"
+                                                                   Width="72"
+                                                                   Foreground="Gray"
+                                                                   FontSize="18"
+                                                                   FontWeight="Bold"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center">
+                                                        <TextBlock.RenderTransform>
+                                                                <RotateTransform Angle="-90"/>
+                                                        </TextBlock.RenderTransform>
+                                                        </TextBlock>
+                                                        
+                                                </Button>
+                                                
+                                        </Grid>
+                                        
+                                </Border>
+                                
+                        </Grid>
+                                
+                        
+                        
+                        <!-- 右侧拖拽条 -->
+                        <GridSplitter Grid.Column="3"
+                                      Width="5"
+                                      Background="#444"/>
+                        
+                        <!-- 右侧属性 -->
+                        <Border Grid.Column="4"
+                                Background="#333"
+                                Padding="10">
+                                
+                                <TextBlock Text="面板属性"
+                                           Foreground="White"/>
+                        
+                        </Border>
+                        
+                </Grid>
+                
+        </DockPanel>
+        
 </Window>

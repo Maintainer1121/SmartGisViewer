@@ -15,13 +15,7 @@ namespace SmartGisViewer.Core.Gis.Layers
         public bool IsVisible { get; set; } = true;
 
         private readonly ITileSource _tileSource;
-        private int TileSize => _tileSource.TileSize;
-
-        /// <summary>
-        /// 世界坐标基准 zoom（固定）
-        /// 世界单位 = BaseZoom 下的像素
-        /// </summary>
-        private const int BaseZoom = 6;
+        private int TileSize => _tileSource.TileSize; // 256
 
         private readonly Dictionary<TileKey, Bitmap> _cache = new();
         private readonly HashSet<TileKey> _loading = new();
@@ -42,99 +36,65 @@ namespace SmartGisViewer.Core.Gis.Layers
             _tileSource = tileSource;
         }
 
-        // =====================================================
-        // Render
-        // =====================================================
         public void Render(
             ViewportState viewport,
             DrawingContext context,
             Rect viewBounds,
             Point viewCenterScreen)
         {
-            int tileZoom = Math.Max(viewport.TileZoom, BaseZoom);
+            int z = viewport.TileZoom;
+            double scale = viewport.PixelsPerWorldUnit;
 
-            // 屏幕 → 世界（世界单位 = BaseZoom 像素）
-            var worldTopLeft =
-                viewport.ScreenToWorld(viewBounds.TopLeft, viewCenterScreen);
-            var worldBottomRight =
-                viewport.ScreenToWorld(viewBounds.BottomRight, viewCenterScreen);
+            // 在 Zoom=0 世界里，一个 z 层瓦片占多大（世界单位）
+            // 世界总宽 256，被切成 2^z 份
+            double worldTileSize = ViewportState.WorldSize0 / (1 << z);
 
-            int minBX = (int)Math.Floor(worldTopLeft.X / TileSize);
-            int maxBX = (int)Math.Floor(worldBottomRight.X / TileSize);
-            int minBY = (int)Math.Floor(worldTopLeft.Y / TileSize);
-            int maxBY = (int)Math.Floor(worldBottomRight.Y / TileSize);
+            // 当前屏幕覆盖的世界范围（Zoom=0 世界）
+            var worldTopLeft = viewport.ScreenToWorld(viewBounds.TopLeft, viewCenterScreen);
+            var worldBottomRight = viewport.ScreenToWorld(viewBounds.BottomRight, viewCenterScreen);
 
-            for (int bx = minBX; bx <= maxBX; bx++)
+            int minX = (int)Math.Floor(worldTopLeft.X / worldTileSize);
+            int maxX = (int)Math.Floor(worldBottomRight.X / worldTileSize);
+            int minY = (int)Math.Floor(worldTopLeft.Y / worldTileSize);
+            int maxY = (int)Math.Floor(worldBottomRight.Y / worldTileSize);
+
+            // y 不环绕：夹到合法范围
+            int maxIndex = (1 << z) - 1;
+            minY = Math.Max(minY, 0);
+            maxY = Math.Min(maxY, maxIndex);
+
+            for (int x = minX; x <= maxX; x++)
             {
-                for (int by = minBY; by <= maxBY; by++)
+                for (int y = minY; y <= maxY; y++)
                 {
-                    DrawBaseTile(
-                        viewport,
-                        context,
-                        bx,
-                        by,
-                        tileZoom,
-                        viewCenterScreen);
+                    // x 环绕（世界左右循环）
+                    int wrappedX = x % (1 << z);
+                    if (wrappedX < 0) wrappedX += (1 << z);
+
+                    DrawTile(context, viewport, wrappedX, y, z, worldTileSize, scale, viewCenterScreen);
                 }
             }
         }
 
-        // =====================================================
-        // BaseZoom 世界瓦片
-        // =====================================================
-        private void DrawBaseTile(
+        private void DrawTile(
+            DrawingContext context,
             ViewportState viewport,
-            DrawingContext context,
-            int baseX,
-            int baseY,
-            int tileZoom,
-            Point viewCenterScreen)
-        {
-            // 世界 → 屏幕
-            var worldTopLeft = new Point(baseX * TileSize, baseY * TileSize);
-            var screenTopLeft =
-                viewport.WorldToScreen(worldTopLeft, viewCenterScreen);
-
-            double screenSize = TileSize * viewport.Zoom;
-
-            var baseRect = new Rect(
-                screenTopLeft,
-                new Size(screenSize, screenSize));
-
-            int delta = tileZoom - BaseZoom;
-            int factor = 1 << delta;
-
-            double subSize = screenSize / factor;
-
-            for (int dx = 0; dx < factor; dx++)
-            {
-                for (int dy = 0; dy < factor; dy++)
-                {
-                    int realX = baseX * factor + dx;
-                    int realY = baseY * factor + dy;
-
-                    var rect = new Rect(
-                        baseRect.X + dx * subSize,
-                        baseRect.Y + dy * subSize,
-                        subSize,
-                        subSize);
-
-                    DrawRealTile(context, realX, realY, tileZoom, rect);
-                }
-            }
-        }
-
-        // =====================================================
-        // 真实瓦片
-        // =====================================================
-        private void DrawRealTile(
-            DrawingContext context,
             int x,
             int y,
-            int zoom,
-            Rect rect)
+            int z,
+            double worldTileSize,
+            double scale,
+            Point viewCenterScreen)
         {
-            var key = new TileKey(x, y, zoom);
+            // 瓦片在 Zoom=0 世界里的左上角
+            var worldPos = new Point(x * worldTileSize, y * worldTileSize);
+            var screenPos = viewport.WorldToScreen(worldPos, viewCenterScreen);
+
+            var rect = new Rect(
+                screenPos,
+                new Size(worldTileSize * scale, worldTileSize * scale));
+
+            var key = new TileKey(x, y, z);
 
             if (_cache.TryGetValue(key, out var bmp))
             {
@@ -148,21 +108,14 @@ namespace SmartGisViewer.Core.Gis.Layers
             if (!_loading.Contains(key))
             {
                 _loading.Add(key);
-                var uri = _tileSource.GetTileUri(x, y, zoom);
+                var uri = _tileSource.GetTileUri(x, y, z);
                 _ = LoadTileAsync(key, uri);
             }
 
-            // 占位
-            context.FillRectangle(
-                new SolidColorBrush(Color.FromArgb(255, 40, 40, 40)), rect);
+            context.FillRectangle(new SolidColorBrush(Color.FromArgb(255, 45, 45, 45)), rect);
         }
 
-        // =====================================================
-        // 下载
-        // =====================================================
-        private async System.Threading.Tasks.Task LoadTileAsync(
-            TileKey key,
-            Uri uri)
+        private async System.Threading.Tasks.Task LoadTileAsync(TileKey key, Uri uri)
         {
             try
             {
@@ -171,7 +124,6 @@ namespace SmartGisViewer.Core.Gis.Layers
                 using var ms = new System.IO.MemoryStream();
                 await s.CopyToAsync(ms);
                 ms.Position = 0;
-
                 _cache[key] = new Bitmap(ms);
             }
             catch (Exception ex)

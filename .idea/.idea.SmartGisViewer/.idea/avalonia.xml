@@ -3,6 +3,7 @@
   <component name="AvaloniaProject">
     <option name="projectPerEditor">
       <map>
+        <entry key="SmartGisViewer/App.axaml" value="SmartGisViewer/SmartGisViewer.csproj" />
         <entry key="SmartGisViewer/Client/Views/MainWindow.axaml" value="SmartGisViewer/SmartGisViewer.csproj" />
         <entry key="SmartGisViewer/Views/MainWindow.axaml" value="SmartGisViewer/SmartGisViewer.csproj" />
       </map>
